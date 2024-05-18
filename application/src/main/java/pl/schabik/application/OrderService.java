@@ -28,7 +28,7 @@ public class OrderService {
         var items = convertToCreateOrderItems(createOrderDto.items());
         var orderAddress = convertToCreateOrderAddress(createOrderDto.address());
 
-        var order = new Order(customer, new Money(createOrderDto.price()),
+        var order = new Order(customer.getId(), new Money(createOrderDto.price()),
                 items, orderAddress);
 
         return orderRepository.save(order).getId();
@@ -44,7 +44,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderDto getOrderById(OrderId orderId) {
         var order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
-        return new OrderDto(orderId.id(), order.getCustomer().getId(), order.getPrice().amount(), order.getStatus(),
+        return new OrderDto(orderId.id(), order.getCustomerId(), order.getPrice().amount(), order.getStatus(),
                 convertToOrderItemsDto(order.getItems()), convertToOrderAddressDto(order.getAddress()));
     }
 

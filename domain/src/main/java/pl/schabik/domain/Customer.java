@@ -1,31 +1,17 @@
 package pl.schabik.domain;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
 import java.util.UUID;
 
-@Table(name = "customers")
-@Entity
+
 public class Customer {
 
-    @Id
     private UUID id;
 
-    @NotBlank
     private String firstName;
 
-    @NotBlank
     private String lastName;
 
-    @NotBlank
-    @Email
-    @Column(unique = true)
     private String email;
-
-    @Version
-    private int version;
 
     public Customer(String firstName, String lastName, String email) {
         this.id = UUID.randomUUID();
@@ -34,8 +20,11 @@ public class Customer {
         this.email = email;
     }
 
-    //For JPA
-    protected Customer() {
+    public Customer(UUID id, String firstName, String lastName, String email) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
     }
 
     public UUID getId() {

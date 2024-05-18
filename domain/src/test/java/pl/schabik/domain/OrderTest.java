@@ -15,18 +15,18 @@ class OrderTest {
     @Test
     void shouldCreateOrderWithValidDetails() {
         //given
-        var customer = new Customer();
+        var customerId = UUID.randomUUID();
         var item = new OrderItem(UUID.randomUUID(), new Money(new BigDecimal("10.00")), new Quantity(2), new Money(new BigDecimal("20.00")));
         var item2 = new OrderItem(UUID.randomUUID(), new Money(new BigDecimal("15.50")), new Quantity(3), new Money(new BigDecimal("46.50")));
         var address = new OrderAddress("Boczka", "12345", "Arnoldowo", "1A");
         var beforeCreation = Instant.now();
 
         //when
-        var order = new Order(customer, new Money(new BigDecimal("66.50")), List.of(item, item2), address);
+        var order = new Order(customerId, new Money(new BigDecimal("66.50")), List.of(item, item2), address);
         var afterCreation = Instant.now();
 
         // then
-        assertThat(order.getCustomer()).isEqualTo(customer);
+        assertThat(order.getCustomerId()).isEqualTo(customerId);
         assertThat(order.getPrice()).isEqualTo(new Money(new BigDecimal("66.50")));
         assertThat(order.getItems()).containsExactlyInAnyOrder(item, item2);
         assertThat(order.getAddress()).isEqualTo(address);
@@ -44,7 +44,6 @@ class OrderTest {
     @Test
     void shouldThrowExceptionWhenOrderPriceDoesNotMatchItemTotals() {
         //given
-        var customer = new Customer();
         var sumOfOrderItemsPrice = new Money(new BigDecimal("20.00"));
         var items = List.of(new OrderItem(UUID.randomUUID(), new Money(new BigDecimal("10.00")), new Quantity(2), sumOfOrderItemsPrice));
         var address = new OrderAddress("Boczka", "12345", "Arnoldowo", "1A");
@@ -52,7 +51,7 @@ class OrderTest {
 
         //when
         var orderDomainException = assertThrows(OrderDomainException.class,
-                () -> new Order(customer, differentPriceThanSumOrderItems, items, address));
+                () -> new Order(UUID.randomUUID(), differentPriceThanSumOrderItems, items, address));
 
         //then
         assertEquals("Total order price: " + differentPriceThanSumOrderItems +
@@ -85,9 +84,8 @@ class OrderTest {
     }
 
     private Order createOrder() {
-        var customer = new Customer();
         var item = new OrderItem(UUID.randomUUID(), new Money(new BigDecimal("10.00")), new Quantity(2), new Money(new BigDecimal("20.00")));
         var address = new OrderAddress("Boczka", "12345", "Arnoldowo", "1A");
-        return new Order(customer, new Money(new BigDecimal("20.00")), List.of(item), address);
+        return new Order(UUID.randomUUID(), new Money(new BigDecimal("20.00")), List.of(item), address);
     }
 }

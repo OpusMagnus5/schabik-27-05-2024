@@ -42,7 +42,7 @@ class OrderServiceTest {
         var savedOrder = orderRepository.findById(orderId).orElseThrow();
         assertThat(savedOrder)
                 .hasNoNullFieldsOrProperties()
-                .hasFieldOrPropertyWithValue("customer.id", createOrderDto.customerId())
+                .hasFieldOrPropertyWithValue("customerId", createOrderDto.customerId())
                 .hasFieldOrPropertyWithValue("price", new Money(createOrderDto.price()))
                 .hasFieldOrPropertyWithValue("status", OrderStatus.PENDING)
                 .extracting(Order::getAddress)

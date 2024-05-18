@@ -7,6 +7,7 @@ import org.hibernate.annotations.FetchMode;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 
 @Table(name = "orders")
@@ -23,9 +24,7 @@ public class Order {
     private Instant lastUpdateAt;
 
     @NotNull
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    private UUID customerId;
 
     @NotNull
     @AttributeOverride(name = "amount", column = @Column(name = "price"))
@@ -43,15 +42,12 @@ public class Order {
     @Fetch(FetchMode.JOIN)
     private List<OrderItem> items;
 
-    @Version
-    private int version;
-
     //For JPA
     protected Order() {
     }
 
-    public Order(Customer customer, Money price, List<OrderItem> items, OrderAddress address) {
-        this.customer = customer;
+    public Order(UUID customerId, Money price, List<OrderItem> items, OrderAddress address) {
+        this.customerId = customerId;
         this.price = price;
         this.items = items;
         this.address = address;
@@ -113,8 +109,8 @@ public class Order {
         return lastUpdateAt;
     }
 
-    public Customer getCustomer() {
-        return customer;
+    public UUID getCustomerId() {
+        return customerId;
     }
 
     public Money getPrice() {

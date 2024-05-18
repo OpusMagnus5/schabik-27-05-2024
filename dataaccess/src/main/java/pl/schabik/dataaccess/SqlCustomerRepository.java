@@ -1,4 +1,4 @@
-package pl.schabik.infrastructure;
+package pl.schabik.dataaccess;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -19,12 +19,14 @@ public class SqlCustomerRepository implements CustomerRepository {
 
     @Override
     public Customer save(Customer customer) {
-        return customerRepositoryJpa.save(customer);
+        var customerEntity = CustomerDataAccessMapper.customerToCustomerEntity(customer);
+        var savedCustomerEntity = customerRepositoryJpa.save(customerEntity);
+        return CustomerDataAccessMapper.customerEntityToCustomer(savedCustomerEntity);
     }
 
     @Override
     public Optional<Customer> findById(UUID id) {
-        return customerRepositoryJpa.findById(id);
+        return customerRepositoryJpa.findById(id).map(CustomerDataAccessMapper::customerEntityToCustomer);
     }
 
     @Override
@@ -34,7 +36,7 @@ public class SqlCustomerRepository implements CustomerRepository {
 }
 
 @Repository
-interface CustomerRepositoryJpa extends CrudRepository<Customer, UUID> {
+interface CustomerRepositoryJpa extends CrudRepository<CustomerEntity, UUID> {
 
     boolean existsByEmail(String email);
 }
