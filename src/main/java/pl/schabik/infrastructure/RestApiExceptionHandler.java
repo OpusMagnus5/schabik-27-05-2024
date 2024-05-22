@@ -6,10 +6,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import pl.schabik.application.common.exception.CustomerAlreadyExistsException;
+import pl.schabik.application.common.exception.CustomerNotFoundException;
+import pl.schabik.application.common.exception.OrderNotFoundException;
 import pl.schabik.domain.OrderDomainException;
-import pl.schabik.usecase.createcustomer.CustomerAlreadyExistsException;
-import pl.schabik.usecase.getcustomer.CustomerNotFoundException;
-import pl.schabik.usecase.common.OrderNotFoundException;
 
 import java.util.stream.Collectors;
 

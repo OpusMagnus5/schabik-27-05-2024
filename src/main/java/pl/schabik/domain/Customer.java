@@ -4,14 +4,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-import java.util.UUID;
-
 @Table(name = "customers")
 @Entity
 public class Customer {
 
     @Id
-    private UUID id;
+    private CustomerId id;
 
     @NotBlank
     private String firstName;
@@ -27,8 +25,8 @@ public class Customer {
     @Version
     private int version;
 
-    public Customer(String firstName, String lastName, String email) {
-        this.id = UUID.randomUUID();
+    public Customer(CustomerId id, String firstName, String lastName, String email) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -38,7 +36,7 @@ public class Customer {
     protected Customer() {
     }
 
-    public UUID getId() {
+    public CustomerId getId() {
         return id;
     }
 

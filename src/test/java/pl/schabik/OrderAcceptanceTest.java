@@ -8,11 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import pl.schabik.domain.*;
-import pl.schabik.usecase.createorder.CreateOrderAddressDto;
-import pl.schabik.usecase.createorder.CreateOrderDto;
-import pl.schabik.usecase.createorder.CreateOrderItemDto;
+import pl.schabik.infrastructure.dto.CreateOrderRequest;
+import pl.schabik.infrastructure.dto.GetOrderResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,9 +30,6 @@ class OrderAcceptanceTest {
     @Autowired
     private CustomerRepository customerRepository;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
     @Test
     @DisplayName("""
             given request to add order for existing customer,
@@ -42,42 +37,47 @@ class OrderAcceptanceTest {
             then save order and HTTP 200 status received""")
     void givenRequestToAddOrderForExistingCustomer_whenRequestIsSent_thenOrderSavedAndHttp200() {
         // given
-        var createOrderDto = createOrderDto();
+        var orderRequest = createOrderRequest();
 
         // when
-        ResponseEntity<UUID> response = restTemplate.postForEntity(getBaseUrl(), createOrderDto, UUID.class);
+        var postResponse = restTemplate.postForEntity(getBaseUrl(), orderRequest, Void.class);
 
-        // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        var savedOrder = orderRepository.findById(new OrderId(response.getBody())).orElseThrow();
-        assertThat(savedOrder)
+        //then
+        assertThat(postResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(postResponse.getHeaders().getLocation()).isNotNull();
+
+        var getResponse = restTemplate.getForEntity(postResponse.getHeaders().getLocation(), GetOrderResponse.class).getBody();
+
+        assertThat(getResponse)
+                .isNotNull()
                 .hasNoNullFieldsOrProperties()
-                .hasFieldOrPropertyWithValue("customer.id", createOrderDto.customerId())
-                .hasFieldOrPropertyWithValue("price", new Money(createOrderDto.price()))
+                .hasFieldOrPropertyWithValue("customerId", orderRequest.customerId())
+                .hasFieldOrPropertyWithValue("price", orderRequest.price())
                 .hasFieldOrPropertyWithValue("status", OrderStatus.PENDING)
-                .extracting(Order::getAddress)
-                .hasFieldOrPropertyWithValue("street", createOrderDto.address().street())
-                .hasFieldOrPropertyWithValue("postalCode", createOrderDto.address().postalCode())
-                .hasFieldOrPropertyWithValue("city", createOrderDto.address().city())
-                .hasFieldOrPropertyWithValue("houseNo", createOrderDto.address().houseNo());
+                .extracting(GetOrderResponse::address)
+                .hasFieldOrPropertyWithValue("street", orderRequest.address().street())
+                .hasFieldOrPropertyWithValue("postalCode", orderRequest.address().postalCode())
+                .hasFieldOrPropertyWithValue("city", orderRequest.address().city())
+                .hasFieldOrPropertyWithValue("houseNo", orderRequest.address().houseNo());
 
-        assertThat(savedOrder.getItems()).hasSize(createOrderDto.items().size())
-                .zipSatisfy(createOrderDto.items(), (orderItem, orderItemDto) -> {
-                    assertThat(orderItem.getProductId()).isEqualTo(orderItemDto.productId());
-                    assertThat(orderItem.getPrice()).isEqualTo(new Money(orderItemDto.price()));
-                    assertThat(orderItem.getQuantity()).isEqualTo(new Quantity(orderItemDto.quantity()));
-                    assertThat(orderItem.getTotalPrice()).isEqualTo(new Money(orderItemDto.totalPrice()));
+        assertThat(getResponse.items()).isNotNull()
+                .hasSize(orderRequest.items().size())
+                .zipSatisfy(orderRequest.items(), (orderItem, orderItemDto) -> {
+                    assertThat(orderItem.productId()).isEqualTo(orderItemDto.productId());
+                    assertThat(orderItem.price()).isEqualTo(orderItemDto.price());
+                    assertThat(orderItem.quantity()).isEqualTo(orderItemDto.quantity());
+                    assertThat(orderItem.totalPrice()).isEqualTo(orderItemDto.totalPrice());
                 });
     }
 
-    private CreateOrderDto createOrderDto() {
-        var customerId = customerRepository.save(new Customer("Waldek", "Kiepski", "waldek@gmail.com")).getId();
+    private CreateOrderRequest createOrderRequest() {
+        var customerId = CustomerId.newOne();
+        customerRepository.save(new Customer(customerId, "Waldek", "Kiepski", "waldek@gmail.com"));
 
-        var items = List.of(new CreateOrderItemDto(UUID.randomUUID(), 2, new BigDecimal("10.00"), new BigDecimal("20.00")),
-                new CreateOrderItemDto(UUID.randomUUID(), 1, new BigDecimal("34.56"), new BigDecimal("34.56")));
-        var address = new CreateOrderAddressDto("Małysza", "94-000", "Adasiowo", "12");
-        return new CreateOrderDto(customerId, new BigDecimal("54.56"), items, address);
+        var items = List.of(new CreateOrderRequest.OrderItemRequest(UUID.randomUUID(), 2, new BigDecimal("10.00"), new BigDecimal("20.00")),
+                new CreateOrderRequest.OrderItemRequest(UUID.randomUUID(), 1, new BigDecimal("34.56"), new BigDecimal("34.56")));
+        var address = new CreateOrderRequest.OrderAddressRequest("Małysza", "94-000", "Adasiowo", "12");
+        return new CreateOrderRequest(customerId.id(), new BigDecimal("54.56"), items, address);
     }
 
     private String getBaseUrl() {

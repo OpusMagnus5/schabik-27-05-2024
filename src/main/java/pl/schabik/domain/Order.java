@@ -8,9 +8,6 @@ import org.hibernate.annotations.FetchMode;
 import java.time.Instant;
 import java.util.List;
 
-import static pl.schabik.domain.OrderStatus.PAID;
-import static pl.schabik.domain.OrderStatus.PENDING;
-
 
 @Table(name = "orders")
 @Entity
@@ -53,7 +50,8 @@ public class Order {
     protected Order() {
     }
 
-    public Order(Customer customer, Money price, List<OrderItem> items, OrderAddress address) {
+    public Order(OrderId id, Customer customer, Money price, List<OrderItem> items, OrderAddress address) {
+        this.id = id;
         this.customer = customer;
         this.price = price;
         this.items = items;
@@ -62,16 +60,14 @@ public class Order {
     }
 
     private void initialize() {
-        this.id = OrderId.newOne();
         this.createAt = Instant.now();
         this.lastUpdateAt = Instant.now();
-        this.status = PENDING;
+        this.status = OrderStatus.PENDING;
         validatePrice(price, items);
         initializeBasketItems();
     }
 
     private void validatePrice(Money price, List<OrderItem> items) {
-
         Money itemsTotalCost = items.stream()
                 .map(OrderItem::getTotalPrice)
                 .reduce(Money.ZERO, Money::add);
@@ -90,19 +86,19 @@ public class Order {
     }
 
     public void pay() {
-        if (PENDING != status) {
+        if (OrderStatus.PENDING != status) {
             throw new OrderDomainException("Order is not in correct state for pay operation");
         }
         lastUpdateAt = Instant.now();
-        status = PAID;
+        status = OrderStatus.PAID;
     }
 
     public boolean isPendingStatus() {
-        return PENDING == status;
+        return OrderStatus.PENDING == status;
     }
 
     public boolean isPaidStatus() {
-        return PAID == status;
+        return OrderStatus.PAID == status;
     }
 
     public OrderId getId() {

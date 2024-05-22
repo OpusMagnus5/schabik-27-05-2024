@@ -1,42 +1,46 @@
 package pl.schabik.infrastructure;
 
 
-import pl.schabik.usecase.createorder.CreateOrderAddressDto;
-import pl.schabik.usecase.createorder.CreateOrderDto;
-import pl.schabik.usecase.createorder.CreateOrderItemDto;
+import pl.schabik.domain.CustomerId;
+import pl.schabik.domain.OrderId;
+import pl.schabik.infrastructure.dto.CreateOrderRequest;
+import pl.schabik.application.command.createorder.CreateOrderAddressDto;
+import pl.schabik.application.command.createorder.CreateOrderCommand;
+import pl.schabik.application.command.createorder.CreateOrderItemDto;
+
+import java.util.stream.Collectors;
 
 public class OrderApiMapper {
 
-    public static CreateOrderDto mapToDto(CreateOrderRequest request) {
-        var itemDtos = request.items().stream()
-                .map(OrderApiMapper::mapItemToCreateDto)
-                .toList();
+    public static CreateOrderCommand mapToCreateOrderCommand(OrderId id, CreateOrderRequest createOrderRequest) {
+        var itemsDto = createOrderRequest.items().stream()
+                .map(OrderApiMapper::mapToItem)
+                .collect(Collectors.toList());
 
-        var addressDto = mapAddressToDto(request.address());
-
-        return new CreateOrderDto(
-                request.customerId(),
-                request.price(),
-                itemDtos,
-                addressDto
+        return new CreateOrderCommand(
+                id,
+                new CustomerId(createOrderRequest.customerId()),
+                createOrderRequest.price(),
+                itemsDto,
+                mapToAddress(createOrderRequest.address())
         );
     }
 
-    private static CreateOrderItemDto mapItemToCreateDto(CreateOrderRequest.OrderItemRequest item) {
+    private static CreateOrderItemDto mapToItem(CreateOrderRequest.OrderItemRequest request) {
         return new CreateOrderItemDto(
-                item.productId(),
-                item.quantity(),
-                item.price(),
-                item.totalPrice()
+                request.productId(),
+                request.quantity(),
+                request.price(),
+                request.totalPrice()
         );
     }
 
-    private static CreateOrderAddressDto mapAddressToDto(CreateOrderRequest.OrderAddressRequest address) {
+    private static CreateOrderAddressDto mapToAddress(CreateOrderRequest.OrderAddressRequest request) {
         return new CreateOrderAddressDto(
-                address.street(),
-                address.postalCode(),
-                address.city(),
-                address.houseNo()
+                request.street(),
+                request.postalCode(),
+                request.city(),
+                request.houseNo()
         );
     }
 }

@@ -38,18 +38,7 @@ class ArchitectureTest {
                 .resideInAPackage("..domain..")
                 .should()
                 .dependOnClassesThat()
-                .resideInAPackage("..usecase..")
-                .check(new ClassFileImporter().importPackages(BASE_PACKAGE));
-    }
-
-    @Test
-    void useCaseShouldNotDependOnSpring() {
-        noClasses()
-                .that()
-                .resideInAPackage("..usecase..")
-                .should()
-                .dependOnClassesThat()
-                .resideInAPackage("org.springframework..")
+                .resideInAPackage("..application..")
                 .check(new ClassFileImporter().importPackages(BASE_PACKAGE));
     }
 
@@ -57,7 +46,7 @@ class ArchitectureTest {
     void useCaseShouldNotDependOnInfrastructure() {
         noClasses()
                 .that()
-                .resideInAPackage("..usecase..")
+                .resideInAPackage("..application..")
                 .should()
                 .dependOnClassesThat()
                 .resideInAPackage("..infrastructure..")

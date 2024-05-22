@@ -1,6 +1,6 @@
 package pl.schabik.infrastructure;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import pl.schabik.domain.Order;
 import pl.schabik.domain.OrderId;
@@ -11,23 +11,23 @@ import java.util.Optional;
 @Repository
 public class SqlOrderRepository implements OrderRepository {
 
-    private final JpaOrderRepository jpaOrderRepository;
+    private final OrderRepositoryJpa orderRepositoryJpa;
 
-    public SqlOrderRepository(JpaOrderRepository jpaOrderRepository) {
-        this.jpaOrderRepository = jpaOrderRepository;
+    public SqlOrderRepository(OrderRepositoryJpa orderRepositoryJpa) {
+        this.orderRepositoryJpa = orderRepositoryJpa;
     }
 
     @Override
     public Order save(Order order) {
-        return jpaOrderRepository.save(order);
+        return orderRepositoryJpa.save(order);
     }
 
     @Override
     public Optional<Order> findById(OrderId id) {
-        return jpaOrderRepository.findById(id);
+        return orderRepositoryJpa.findById(id);
     }
 }
 
 @Repository
-interface JpaOrderRepository extends JpaRepository<Order, OrderId> {
+interface OrderRepositoryJpa extends CrudRepository<Order, OrderId> {
 }

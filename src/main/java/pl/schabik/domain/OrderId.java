@@ -2,6 +2,7 @@ package pl.schabik.domain;
 
 import jakarta.persistence.Embeddable;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Embeddable
@@ -24,4 +25,16 @@ public class OrderId {
         return orderId;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OrderId orderId1 = (OrderId) o;
+        return Objects.equals(orderId, orderId1.orderId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(orderId);
+    }
 }

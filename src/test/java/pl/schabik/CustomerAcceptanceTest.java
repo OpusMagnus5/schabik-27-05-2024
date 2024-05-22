@@ -8,11 +8,11 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import pl.schabik.application.command.createcustomer.CreateCustomerCommand;
+import pl.schabik.application.command.createcustomer.CreateCustomerHandler;
+import pl.schabik.domain.CustomerId;
 import pl.schabik.infrastructure.ErrorResponse;
-import pl.schabik.usecase.createcustomer.CreateCustomerDto;
-import pl.schabik.usecase.createcustomer.CreateCustomerService;
-import pl.schabik.usecase.getcustomer.CustomerDto;
-import pl.schabik.usecase.getcustomer.GetCustomerService;
+import pl.schabik.infrastructure.dto.GetCustomerResponse;
 
 import java.util.UUID;
 
@@ -28,10 +28,7 @@ class CustomerAcceptanceTest {
     private TestRestTemplate restTemplate;
 
     @Autowired
-    private CreateCustomerService createCustomerService;
-
-    @Autowired
-    private GetCustomerService getCustomerService;
+    private CreateCustomerHandler createCustomerHandler;
 
     @Test
     @DisplayName("""
@@ -40,19 +37,20 @@ class CustomerAcceptanceTest {
             then return Customer details and HTTP 200 status""")
     void givenExistingCustomerId_whenRequestIsSent_thenCustomerDetailsReturnedAndHttp200() {
         //given
-        var createCustomerDto = new CreateCustomerDto("Ferdzio", "Kiepski", "ferdek@gemail.com");
-        var customerId = createCustomerService.addCustomer(createCustomerDto);
+        var customerId = CustomerId.newOne();
+        var createCustomerDto = new CreateCustomerCommand(customerId, "Ferdzio", "Kiepski", "ferdek@gemail.com");
+        createCustomerHandler.handle(createCustomerDto);
 
         //when
-        ResponseEntity<CustomerDto> response = restTemplate.getForEntity(
-                getBaseCustomersUrl() + "/" + customerId, CustomerDto.class);
+        var response = restTemplate.getForEntity(
+                getBaseCustomersUrl() + "/" + customerId.id(), GetCustomerResponse.class);
 
         //then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody())
                 .isNotNull()
                 .hasNoNullFieldsOrProperties()
-                .hasFieldOrPropertyWithValue("id", customerId)
+                .hasFieldOrPropertyWithValue("id", customerId.id())
                 .hasFieldOrPropertyWithValue("firstName", createCustomerDto.firstName())
                 .hasFieldOrPropertyWithValue("lastName", createCustomerDto.lastName())
                 .hasFieldOrPropertyWithValue("email", createCustomerDto.email());
@@ -87,16 +85,19 @@ class CustomerAcceptanceTest {
             then Customer is added and HTTP 200 status received""")
     void givenRequestForCreatingCustomer_whenRequestIsSent_thenCustomerAddedAndHttp200() {
         //given
-        var createCustomerDto = new CreateCustomerDto("Marianek", "Paździoch", "mario@gemail.com");
+        var createCustomerDto = new CreateCustomerCommand(CustomerId.newOne(), "Marianek", "Paździoch", "mario@gemail.com");
 
         //when
-        ResponseEntity<UUID> postResponse = restTemplate.postForEntity(getBaseCustomersUrl(), createCustomerDto, UUID.class);
+        var postResponse = restTemplate.postForEntity(getBaseCustomersUrl(), createCustomerDto, Void.class);
 
         //then
-        assertThat(postResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(postResponse.getBody()).isNotNull();
+        assertThat(postResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(postResponse.getHeaders().getLocation()).isNotNull();
 
-        assertThat(getCustomerService.getCustomer(postResponse.getBody()))
+        var getResponse = restTemplate.getForEntity(postResponse.getHeaders().getLocation(), GetCustomerResponse.class).getBody();
+
+        assertThat(getResponse)
+                .isNotNull()
                 .hasNoNullFieldsOrProperties()
                 .hasFieldOrPropertyWithValue("firstName", createCustomerDto.firstName())
                 .hasFieldOrPropertyWithValue("lastName", createCustomerDto.lastName())
@@ -110,13 +111,13 @@ class CustomerAcceptanceTest {
             then Customer not added and HTTP 409 status received""")
     void givenRequestForCreatingCustomerWithExistingEmail_whenRequestIsSent_thenCustomerNotAddedAndHttp409() {
         //given
-        String email = "waldek12@gmail.com";
-        createCustomerService.addCustomer(new CreateCustomerDto("Waldemar", "Kiepski", email));
+        var email = "waldek12@gmail.com";
+        createCustomerHandler.handle(new CreateCustomerCommand(CustomerId.newOne(), "Waldemar", "Kiepski", email));
 
-        var createCustomerDto = new CreateCustomerDto("Walduś", "Boczek", email);
+        var createCustomerCommand = new CreateCustomerCommand(CustomerId.newOne(), "Walduś", "Boczek", email);
 
         //when
-        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity(getBaseCustomersUrl(), createCustomerDto, ErrorResponse.class);
+        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity(getBaseCustomersUrl(), createCustomerCommand, ErrorResponse.class);
 
         //then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
