@@ -10,7 +10,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import pl.schabik.common.CustomerCreatedEvent;
-import pl.schabik.order.application.OrderService;
+import pl.schabik.order.application.OrderApplicationService;
 import pl.schabik.order.application.dto.CreateOrderAddressDto;
 import pl.schabik.order.application.dto.CreateOrderDto;
 import pl.schabik.order.application.dto.CreateOrderItemDto;
@@ -38,7 +38,7 @@ class OrderAcceptanceTest {
     private CustomerProjectionService customerService;
 
     @Autowired
-    private OrderService orderService;
+    private OrderApplicationService orderApplicationService;
 
     @Test
     @DisplayName("""
@@ -55,7 +55,7 @@ class OrderAcceptanceTest {
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        var savedOrder = orderService.getOrderById(new OrderId(response.getBody()));
+        var savedOrder = orderApplicationService.getOrderById(new OrderId(response.getBody()));
         assertThat(savedOrder)
                 .hasNoNullFieldsOrProperties()
                 .hasFieldOrPropertyWithValue("customerId", createOrderDto.customerId())

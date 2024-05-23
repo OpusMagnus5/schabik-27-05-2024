@@ -11,7 +11,9 @@ import pl.schabik.order.application.exception.CustomerNotFoundException;
 import pl.schabik.order.application.exception.OrderNotFoundException;
 import pl.schabik.order.application.replication.CustomerProjectionService;
 import pl.schabik.order.application.replication.InMemoryCustomerProjectionRepository;
-import pl.schabik.order.domain.*;
+import pl.schabik.order.domain.Order;
+import pl.schabik.order.domain.OrderDomainService;
+import pl.schabik.order.domain.OrderStatus;
 import pl.schabik.order.domain.vo.Money;
 import pl.schabik.order.domain.vo.OrderId;
 import pl.schabik.order.domain.vo.Quantity;
@@ -23,12 +25,13 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-class OrderServiceTest {
+class OrderApplicationServiceTest {
 
     InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
     InMemoryCustomerProjectionRepository customerRepository = new InMemoryCustomerProjectionRepository();
     CustomerProjectionService customerService = new CustomerProjectionService(customerRepository);
-    OrderService orderService = new OrderService(orderRepository, customerService);
+    OrderDomainService orderDomainService = new OrderDomainService();
+    OrderApplicationService orderApplicationService = new OrderApplicationService(orderRepository, customerService, orderDomainService);
 
     @AfterEach
     void cleanUp() {
@@ -44,7 +47,7 @@ class OrderServiceTest {
         var createOrderDto = getCreateOrderDto(customerId);
 
         // when
-        var orderId = orderService.createOrder(createOrderDto);
+        var orderId = orderApplicationService.createOrder(createOrderDto);
 
         // then
         var savedOrder = orderRepository.findById(orderId).orElseThrow();
@@ -75,7 +78,7 @@ class OrderServiceTest {
         var createOrderDto = getCreateOrderDto(nonExistentCustomerId);
 
         // expected
-        assertThatThrownBy(() -> orderService.createOrder(createOrderDto))
+        assertThatThrownBy(() -> orderApplicationService.createOrder(createOrderDto))
                 .isInstanceOf(CustomerNotFoundException.class)
                 .hasMessage(CustomerNotFoundException.createExceptionMessage(nonExistentCustomerId));
     }
@@ -86,10 +89,10 @@ class OrderServiceTest {
         var customerId = UUID.randomUUID();
         customerService.replicateCustomer(new CustomerCreatedEvent(customerId));
         var createOrderDto = getCreateOrderDto(customerId);
-        var orderId = orderService.createOrder(createOrderDto);
+        var orderId = orderApplicationService.createOrder(createOrderDto);
 
         // when
-        orderService.pay(orderId);
+        orderApplicationService.pay(orderId);
 
         // then
         var paidOrder = orderRepository.findById(orderId).orElseThrow();
@@ -102,7 +105,7 @@ class OrderServiceTest {
         var nonExistentOrderId = new OrderId(UUID.randomUUID());
 
         // expected
-        assertThatThrownBy(() -> orderService.pay(nonExistentOrderId))
+        assertThatThrownBy(() -> orderApplicationService.pay(nonExistentOrderId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage(OrderNotFoundException.createExceptionMessage(nonExistentOrderId));
     }
@@ -113,10 +116,10 @@ class OrderServiceTest {
         var customerId = UUID.randomUUID();
         customerService.replicateCustomer(new CustomerCreatedEvent(customerId));
         var createOrderDto = getCreateOrderDto(customerId);
-        var orderId = orderService.createOrder(createOrderDto);
+        var orderId = orderApplicationService.createOrder(createOrderDto);
 
         // when
-        var orderDto = orderService.getOrderById(orderId);
+        var orderDto = orderApplicationService.getOrderById(orderId);
 
         // then
         assertThat(orderDto)
@@ -145,7 +148,7 @@ class OrderServiceTest {
         var nonExistentOrderId = new OrderId(UUID.randomUUID());
 
         // expected
-        assertThatThrownBy(() -> orderService.getOrderById(nonExistentOrderId))
+        assertThatThrownBy(() -> orderApplicationService.getOrderById(nonExistentOrderId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessage(OrderNotFoundException.createExceptionMessage(nonExistentOrderId));
     }

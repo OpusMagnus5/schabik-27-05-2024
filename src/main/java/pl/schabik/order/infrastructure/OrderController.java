@@ -3,7 +3,7 @@ package pl.schabik.order.infrastructure;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import pl.schabik.order.application.OrderService;
+import pl.schabik.order.application.OrderApplicationService;
 import pl.schabik.order.domain.vo.OrderId;
 import pl.schabik.order.infrastructure.dto.CreateOrderRequest;
 import pl.schabik.order.infrastructure.dto.GetOrderResponse;
@@ -14,21 +14,21 @@ import java.util.UUID;
 @RequestMapping("/orders")
 class OrderController {
 
-    private final OrderService orderService;
+    private final OrderApplicationService orderApplicationService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
+    public OrderController(OrderApplicationService orderApplicationService) {
+        this.orderApplicationService = orderApplicationService;
     }
 
     @PostMapping
     public UUID createOrder(@RequestBody @Valid CreateOrderRequest createOrderRequest) {
         var createOrderDto = OrderApiMapper.mapToDto(createOrderRequest);
-        return orderService.createOrder(createOrderDto).id();
+        return orderApplicationService.createOrder(createOrderDto).id();
     }
 
     @GetMapping("/{id}")
     public GetOrderResponse getOrder(@PathVariable UUID id) {
-        var orderDto = orderService.getOrderById(new OrderId(id));
+        var orderDto = orderApplicationService.getOrderById(new OrderId(id));
         return OrderApiMapper.mapToGetOrderResponse(orderDto);
     }
 }
